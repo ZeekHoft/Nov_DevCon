@@ -4,6 +4,7 @@ from time import *
 import threading
 import random
 import sys
+
 import pyttsx3
 
 
@@ -15,14 +16,14 @@ NO IDEA WHY!?
 """
 
 
-
 engine = pyttsx3.init()
-engine.setProperty('rate', 130)
-engine.setProperty('volume', 1)
+engine.setProperty("rate", 130)
+engine.setProperty("volume", 1)
 
 # Global variable
 whacks = 0
-GAME_TIMER = 10
+total_times = 10
+game_timer = total_times
 # Constant variables
 HOLE_AMT = 4  # total holes is the square of this number
 HOLE_PADDING = 10
@@ -33,44 +34,53 @@ OTHER_COLOR = "#eff3a0"
 
 
 def start():
-    global whacks, GAME_TIMER
+    global whacks, game_timer
     # Clear existing moles
     for i in range(len(hole)):
         hole[i].config(state="disabled")
-    GAME_TIMER = GAME_TIMER
+    game_timer = 10
     whacks = 0
     scorelabel.config(text="0")
-    timelabel.config(text=GAME_TIMER)
+    timelabel.config(text=game_timer)
     remark.config(text="")
 
     t = threading.Thread(target=whac_a_mole)
-    t.start()
+    if t.is_alive() == True:
+        whac_a_mole()
+    else:
+        t.start()
+
 
 def time():
-    global GAME_TIMER
-    while GAME_TIMER > 0:
-        GAME_TIMER -= 1
+    global game_timer
+    while game_timer > 0:
+        game_timer -= 1
         sleep(1)
-        timelabel.config(text=GAME_TIMER)
-        if GAME_TIMER == 0:
+        timelabel.config(text=game_timer)
+        if game_timer == 0:
             handle_game_end()
 
 
 def handle_game_end():
     global replaybtn
-    replaybtn = Button(text=("Play Again"), font=("Stencil", 25), command=start, bg=BG_COLOR, fg=LIGHT_COLOR)
+    replaybtn = Button(
+        text=("Play Again"),
+        font=("Stencil", 25),
+        command=start,
+        bg=BG_COLOR,
+        fg=LIGHT_COLOR,
+    )
     replaybtn.place(x=0, y=0)
 
 
 def reset_game():
-    global replaybtn, whacks, GAME_TIMER
+    global replaybtn, whacks, game_timer
     replaybtn.place_forget()
     for i in range(len(hole)):
         hole[i].config(state="disabled")  # Disable all holes
     whacks = 0
-    GAME_TIMER = 5
+    game_timer = 5
     start()
-
 
 
 def ready_set_whack():
@@ -94,15 +104,14 @@ def whac_a_mole():
     handle_game_end()
     ready_set_whack()
 
-
     timer_thread = threading.Thread(target=time)
     timer_thread.start()
 
     mole = PhotoImage(file="mole.png")
     mole = mole.subsample(5)
-    for i in range(0, 60):
-        if GAME_TIMER == 0:  # Stop generating moles when the timer ends
-            break
+
+    # Stop generating moles when the timer ends
+    while game_timer:
         hole_num = random.randint(0, HOLE_AMT**2 - 1)
         hole[hole_num].config(state="normal", image=mole)
         sleep(0.8)
@@ -125,8 +134,8 @@ def whac_a_mole():
     }
     for minscore, rm in rating.items():
         if whacks >= minscore and whacks < minscore + 10:
-            remark.config(text=f"You did\n{rm}", fg= LIGHT_COLOR )
-            engine.say(f"You did\n{rm}")
+            remark.config(text=f"You did\n{rm}", fg=LIGHT_COLOR)
+            engine.say(f"You did{rm}")
             engine.runAndWait()
             break
 
@@ -137,8 +146,6 @@ def onwhack(num):
     global whacks
     whacks += 1
     scorelabel.config(text="* " + str(whacks) + " *")
-
-
 
 
 # Create window
@@ -154,32 +161,30 @@ title.grid(column=1, row=0, pady=10)
 
 # Score
 scorelabel = Label(
-    text=whacks, width=9, font=("Cascadia Code", 30), bg=DARK_COLOR, fg=LIGHT_COLOR,
+    text=whacks,
+    width=9,
+    font=("Cascadia Code", 30),
+    bg=DARK_COLOR,
+    fg=LIGHT_COLOR,
 )
 scorelabel.grid(column=1, row=1)
 
 
 timelabel = Label(
-    text=GAME_TIMER, width=9, font=("Cascadia Code", 30), bg=LIGHT_COLOR, fg=DARK_COLOR
+    text=game_timer, width=9, font=("Cascadia Code", 30), bg=LIGHT_COLOR, fg=DARK_COLOR
 )
-timelabel.place(x=853, y=170)
-
-
-
-
+timelabel.grid(column=1, row=2)
 
 
 # Remark
-remark = Label(
-    text="", width=17, bg=BG_COLOR, fg=BG_COLOR, font=("Stencil", 50)
-)
+remark = Label(text="", width=17, bg=BG_COLOR, fg=BG_COLOR, font=("Stencil", 50))
 remark.place(relx=0.15, rely=0.5, anchor=CENTER)
 # remark.grid(column=1, row=3)
 
 
 # Create playarea grid
 playarea = Frame(screen, bg=BG_COLOR)
-playarea.grid(column=1, row=2)
+playarea.grid(column=1, row=3)
 screen.columnconfigure(1, weight=1)
 screen.rowconfigure(2, weight=1)
 
