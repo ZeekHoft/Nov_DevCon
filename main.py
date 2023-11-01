@@ -1,3 +1,7 @@
+
+
+
+
 from functools import partial
 from tkinter import *
 from time import *
@@ -22,24 +26,28 @@ NO IDEA WHY!?
 whacks = 0
 GAME_TIMER = 5
 # Constant variables
-HOLE_AMT = 3  # total holes is the square of this number
-HOLE_PADDING = 10
+HOLE_AMT = 6  # total holes is the square of this number
+HOLE_PADDING = 1
 BG_COLOR = "burlywood4"
 LIGHT_COLOR = "#faead6"
 DARK_COLOR = "#0c1703"
-OTHER_COLOR = "#eff3a0"
+OTHER_COLOR = "#FF5733"
 
-def main():
-    ready_set_whack()
-    time()
-    whac_a_mole()
-    onwhack()
+
+
+
+
 def start():
-    global whacks
+    global whacks, GAME_TIMER
+    # Clear existing moles
+    for i in range(len(hole)):
+        hole[i].config(state="disabled")
+    GAME_TIMER = 5
     whacks = 0
+    scorelabel.config(text="0")
+    timelabel.config(text=GAME_TIMER)
     remark.config(text="")
 
-    # replaybtn.config(state='disabled')
     t = threading.Thread(target=whac_a_mole)
     t.start()
 
@@ -55,8 +63,20 @@ def time():
 
 def handle_game_end():
     global replaybtn
-    replaybtn = Button(text="Play Again", command=main)
-    replaybtn.place(x=200, y=200)
+    replaybtn = Button(text=("Play Again"),font=("Stencil", 25), command=start, bg=BG_COLOR, fg=LIGHT_COLOR)
+
+
+    replaybtn.place(x=0, y=0)
+
+
+def reset_game():
+    global replaybtn, whacks, GAME_TIMER
+    replaybtn.place_forget()
+    for i in range(len(hole)):
+        hole[i].config(state="disabled")  # Disable all holes
+    whacks = 0
+    GAME_TIMER = 5
+    start()
 
 
 
@@ -74,22 +94,24 @@ def ready_set_whack():
 # Game!
 def whac_a_mole():
     handle_game_end()
-    ready_set_whack()
+    #ready_set_whack()
+
 
     timer_thread = threading.Thread(target=time)
     timer_thread.start()
 
-
     mole = PhotoImage(file="mole.png")
     mole = mole.subsample(5)
     for i in range(0, 60):
+        if GAME_TIMER == 0:  # Stop generating moles when the timer ends
+            break
         hole_num = random.randint(0, HOLE_AMT**2 - 1)
         hole[hole_num].config(state="normal", image=mole)
-        sleep(1)
+        sleep(0.8)
         hole[hole_num].config(
             state="disabled", image=holepng, command=partial(onwhack, hole_num)
         )
-
+    handle_game_end()
     # replaybtn.config(state='normal')
 
     # Give remark
@@ -97,15 +119,16 @@ def whac_a_mole():
     rating = {
         0: "POOR",
         10: "BAD",
-        20: "DO BETTER!",
-        30: "GOOD",
-        40: "GREAT!",
-        50: "AWESOME!",
-        60: "WHACKED 'em ALL!",
+        15: "DO BETTER!",
+        20: "GOOD",
+        25: "GREAT!",
+        30: "AWESOME!",
+        35: "WHACKED 'em ALL!",
     }
     for minscore, rm in rating.items():
         if whacks >= minscore and whacks < minscore + 10:
-            remark.config(text=rm, bg=OTHER_COLOR)
+            remark.config(text=f"YOU DID \n {rm}", font=("Stencil", 50), bg=BG_COLOR, fg=LIGHT_COLOR)
+            remark.placegrid(column=1, row=2)
             break
 
 
@@ -132,7 +155,7 @@ title.grid(column=1, row=0, pady=10)
 
 # Score
 scorelabel = Label(
-    text=whacks, width=9, font=("Cascadia Code", 30), bg=DARK_COLOR, fg=LIGHT_COLOR, 
+    text=whacks, width=9, font=("Cascadia Code", 30), bg=DARK_COLOR, fg=LIGHT_COLOR,
 )
 scorelabel.grid(column=1, row=1)
 
@@ -195,9 +218,7 @@ for child in playarea.winfo_children():
     child.grid_configure(padx=HOLE_PADDING, pady=HOLE_PADDING)
 
 
-# ano ni?
-loc_y = random.randint(200, 1300)
-loc_x = random.randint(200, 1300)
+
 
 
 # waai ni pabayeh lng later on lng ni i edit in pre
