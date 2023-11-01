@@ -1,14 +1,10 @@
-
-
-
-
 from functools import partial
 from tkinter import *
 from time import *
 import threading
 import random
 import sys
-
+import pyttsx3
 
 
 """
@@ -20,21 +16,20 @@ NO IDEA WHY!?
 
 
 
-
+engine = pyttsx3.init()
+engine.setProperty('rate', 130)
+engine.setProperty('volume', 1)
 
 # Global variable
 whacks = 0
-GAME_TIMER = 5
+GAME_TIMER = 10
 # Constant variables
-HOLE_AMT = 6  # total holes is the square of this number
-HOLE_PADDING = 1
+HOLE_AMT = 4  # total holes is the square of this number
+HOLE_PADDING = 10
 BG_COLOR = "burlywood4"
 LIGHT_COLOR = "#faead6"
 DARK_COLOR = "#0c1703"
-OTHER_COLOR = "#FF5733"
-
-
-
+OTHER_COLOR = "#eff3a0"
 
 
 def start():
@@ -42,7 +37,7 @@ def start():
     # Clear existing moles
     for i in range(len(hole)):
         hole[i].config(state="disabled")
-    GAME_TIMER = 5
+    GAME_TIMER = GAME_TIMER
     whacks = 0
     scorelabel.config(text="0")
     timelabel.config(text=GAME_TIMER)
@@ -63,9 +58,7 @@ def time():
 
 def handle_game_end():
     global replaybtn
-    replaybtn = Button(text=("Play Again"),font=("Stencil", 25), command=start, bg=BG_COLOR, fg=LIGHT_COLOR)
-
-
+    replaybtn = Button(text=("Play Again"), font=("Stencil", 25), command=start, bg=BG_COLOR, fg=LIGHT_COLOR)
     replaybtn.place(x=0, y=0)
 
 
@@ -83,18 +76,23 @@ def reset_game():
 def ready_set_whack():
     sleep(1)
     scorelabel.config(text="Ready")
-    sleep(1)
+    engine.say("Ready")
+    engine.runAndWait()
+
     scorelabel.config(text="Set")
-    sleep(1)
+    engine.say("Set")
+    engine.runAndWait()
+
     scorelabel.config(text="WHACK!!")
-    sleep(1)
+    engine.say("WHACK!!")
+    engine.runAndWait()
     scorelabel.config(text="0")
 
 
 # Game!
 def whac_a_mole():
     handle_game_end()
-    #ready_set_whack()
+    ready_set_whack()
 
 
     timer_thread = threading.Thread(target=time)
@@ -117,18 +115,19 @@ def whac_a_mole():
     # Give remark
     global whacks
     rating = {
-        0: "POOR",
-        10: "BAD",
-        15: "DO BETTER!",
-        20: "GOOD",
-        25: "GREAT!",
-        30: "AWESOME!",
-        35: "WHACKED 'em ALL!",
+        0: "POORLY",
+        10: "BADLY",
+        20: "DO BETTER!",
+        30: "GOOD",
+        40: "GREAT!",
+        50: "AWESOME!",
+        60: "WHACKED 'em ALL!",
     }
     for minscore, rm in rating.items():
         if whacks >= minscore and whacks < minscore + 10:
-            remark.config(text=f"YOU DID \n {rm}", font=("Stencil", 50), bg=BG_COLOR, fg=LIGHT_COLOR)
-            remark.placegrid(column=1, row=2)
+            remark.config(text=f"You did\n{rm}", fg= LIGHT_COLOR )
+            engine.say(f"You did\n{rm}")
+            engine.runAndWait()
             break
 
 
@@ -172,7 +171,7 @@ timelabel.place(x=853, y=170)
 
 # Remark
 remark = Label(
-    text="", width=17, bg=BG_COLOR, fg=BG_COLOR, font=("Ariel Rounded MT", 30)
+    text="", width=17, bg=BG_COLOR, fg=BG_COLOR, font=("Stencil", 50)
 )
 remark.place(relx=0.15, rely=0.5, anchor=CENTER)
 # remark.grid(column=1, row=3)
@@ -218,7 +217,9 @@ for child in playarea.winfo_children():
     child.grid_configure(padx=HOLE_PADDING, pady=HOLE_PADDING)
 
 
-
+# ano ni?
+loc_y = random.randint(200, 1300)
+loc_x = random.randint(200, 1300)
 
 
 # waai ni pabayeh lng later on lng ni i edit in pre
