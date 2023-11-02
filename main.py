@@ -4,7 +4,6 @@ from time import *
 import threading
 import random
 import sys
-
 import pyttsx3
 
 
@@ -16,14 +15,11 @@ NO IDEA WHY!?
 """
 
 
-engine = pyttsx3.init()
-engine.setProperty("rate", 130)
-engine.setProperty("volume", 1)
-
 # Global variable
 whacks = 0
-total_times = 10
-game_timer = total_times
+game_timer = 10
+time_left = game_timer
+
 # Constant variables
 HOLE_AMT = 4  # total holes is the square of this number
 HOLE_PADDING = 10
@@ -33,34 +29,33 @@ DARK_COLOR = "#0c1703"
 OTHER_COLOR = "#eff3a0"
 
 
+# Start or reset the game
 def start():
-    global whacks, game_timer
-    # Clear existing moles
+    global whacks, time_left
     for i in range(len(hole)):
         hole[i].config(state="disabled")
-    game_timer = 10
+    time_left = game_timer
     whacks = 0
     scorelabel.config(text="0")
-    timelabel.config(text=game_timer)
+    timelabel.config(text=time_left)
     remark.config(text="")
 
     t = threading.Thread(target=whac_a_mole)
-    if t.is_alive() == True:
-        whac_a_mole()
-    else:
-        t.start()
+    t.start()
 
 
+# Countdown timer
 def time():
-    global game_timer
-    while game_timer > 0:
-        game_timer -= 1
+    global time_left
+    while time_left > 0:
+        time_left -= 1
         sleep(1)
-        timelabel.config(text=game_timer)
-        if game_timer == 0:
+        timelabel.config(text=time_left)
+        if time_left == 0:
             handle_game_end()
 
 
+# Create replay button
 def handle_game_end():
     global replaybtn
     replaybtn = Button(
@@ -73,16 +68,7 @@ def handle_game_end():
     replaybtn.place(x=0, y=0)
 
 
-def reset_game():
-    global replaybtn, whacks, game_timer
-    replaybtn.place_forget()
-    for i in range(len(hole)):
-        hole[i].config(state="disabled")  # Disable all holes
-    whacks = 0
-    game_timer = 5
-    start()
-
-
+# Ready the player
 def ready_set_whack():
     sleep(1)
     scorelabel.config(text="Ready")
@@ -111,7 +97,7 @@ def whac_a_mole():
     mole = mole.subsample(5)
 
     # Stop generating moles when the timer ends
-    while game_timer:
+    while time_left:
         hole_num = random.randint(0, HOLE_AMT**2 - 1)
         hole[hole_num].config(state="normal", image=mole)
         sleep(0.8)
@@ -135,7 +121,7 @@ def whac_a_mole():
     for minscore, rm in rating.items():
         if whacks >= minscore and whacks < minscore + 10:
             remark.config(text=f"You did\n{rm}", fg=LIGHT_COLOR)
-            engine.say(f"You did{rm}")
+            engine.say(f"You did {rm}")
             engine.runAndWait()
             break
 
@@ -146,6 +132,12 @@ def onwhack(num):
     global whacks
     whacks += 1
     scorelabel.config(text="* " + str(whacks) + " *")
+
+
+# Text to speech engine
+engine = pyttsx3.init()
+engine.setProperty("rate", 130)
+engine.setProperty("volume", 1)
 
 
 # Create window
@@ -171,7 +163,7 @@ scorelabel.grid(column=1, row=1)
 
 
 timelabel = Label(
-    text=game_timer, width=9, font=("Cascadia Code", 30), bg=LIGHT_COLOR, fg=DARK_COLOR
+    text=time_left, width=9, font=("Cascadia Code", 30), bg=LIGHT_COLOR, fg=DARK_COLOR
 )
 timelabel.grid(column=1, row=2)
 
@@ -223,15 +215,8 @@ for child in playarea.winfo_children():
 
 
 # ano ni?
-loc_y = random.randint(200, 1300)
-loc_x = random.randint(200, 1300)
-
-
-# waai ni pabayeh lng later on lng ni i edit in pre
-"""
-replaybtn = Button(text="Play Again", command=start)
-replaybtn.place(x=0, y=2)
-"""
+# loc_y = random.randint(200, 1300)
+# loc_x = random.randint(200, 1300)
 
 
 # Press q to end game
