@@ -22,14 +22,13 @@ OTHER_COLOR = "#eff3a0"
 
 
 # Start or reset the game
-def start():
+def start(event):
     global whacks, time_left
     for i in range(len(hole)):
         hole[i].config(state="disabled")
     time_left = game_timer
     whacks = 0
-    scorelabel.config(text="0")
-    timelabel.config(text=time_left)
+    timelabel.config(text=f"{time_left} seconds")
     remark.config(text="")
 
     t = threading.Thread(target=whac_a_mole)
@@ -42,22 +41,7 @@ def time():
     while time_left > 0:
         time_left -= 1
         sleep(1)
-        timelabel.config(text=time_left)
-        if time_left == 0:
-            handle_game_end()
-
-
-# Create replay button
-def handle_game_end():
-    global replaybtn
-    replaybtn = Button(
-        text=("Play Again"),
-        font=("Stencil", 25),
-        command=start,
-        bg=BG_COLOR,
-        fg=LIGHT_COLOR,
-    )
-    replaybtn.place(x=0, y=0)
+        timelabel.config(text=f"{time_left} seconds")
 
 
 # Ready the player
@@ -74,7 +58,7 @@ def ready_set_whack():
     scorelabel.config(text="WHACK!!")
     engine.say("WHACK!!")
     engine.runAndWait()
-    scorelabel.config(text="0")
+    scorelabel.config(text="0 points")
 
 
 def change_state(hole_num):
@@ -89,7 +73,6 @@ def change_state(hole_num):
 
 # Game!
 def whac_a_mole():
-    handle_game_end()
     ready_set_whack()
 
     timer_thread = threading.Thread(target=time)
@@ -107,7 +90,7 @@ def whac_a_mole():
         sleep(0.8)
 
     change_hole.join()
-    handle_game_end()
+    timelabel.configure(text="Play Again")
 
     # Give remark
     global whacks
@@ -133,7 +116,7 @@ def onwhack(num):
     hole[num].config(command=0, relief="sunken", image=hitpng)
     global whacks
     whacks += 1
-    scorelabel.config(text="* " + str(whacks) + " *")
+    scorelabel.config(text=f"{whacks} points")
 
 
 # Text to speech engine
@@ -157,7 +140,7 @@ screen.rowconfigure(0, weight=1)
 # Score
 scorelabel = Label(
     text=whacks,
-    width=9,
+    width=11,
     font=("Cascadia Code", 30),
     bg=DARK_COLOR,
     fg=LIGHT_COLOR,
@@ -166,8 +149,9 @@ scorelabel.grid(column=1, row=1)
 screen.rowconfigure(1, weight=1)
 
 timelabel = Label(
-    text=time_left, width=9, font=("Cascadia Code", 30), bg=LIGHT_COLOR, fg=DARK_COLOR
+    text="Start", width=11, font=("Cascadia Code", 30), bg=LIGHT_COLOR, fg=DARK_COLOR
 )
+timelabel.bind(sequence="<Button-1>", func=start)
 timelabel.grid(column=1, row=2)
 screen.rowconfigure(2, weight=1)
 
@@ -228,5 +212,4 @@ def on_key(event):
 screen.bind("<Key>", on_key)
 
 
-start()
 screen.mainloop()
