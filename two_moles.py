@@ -1,266 +1,166 @@
-from functools import partial
-from tkinter import *
-from time import *
-import threading
+import pygame
 import random
 import sys
-import pyttsx3
+import time
+
+# Initialize Pygame
+pygame.init()
+
+# Constants
+WIDTH, HEIGHT = 800, 600
+DOT_SIZE = 80
+BACKGROUND_COLOR = (139, 115, 85)
+FPS = 60
+MIN_DISTANCE = 100  # Minimum distance between dots
+GAME_DURATION = 10  # Game duration in seconds
+
+# Initialize the screen
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Click the Dots!")
+
+# Initialize score
+score = 0
+
+# Load the image for the dot and scale it to the desired size
+dot_image = pygame.image.load("hole.png")
+dot_image = pygame.transform.scale(dot_image, (DOT_SIZE, DOT_SIZE))
+
+# Load the image for the hit dot
+hit_image = pygame.image.load("hit.png")
+hit_image = pygame.transform.scale(hit_image, (DOT_SIZE, DOT_SIZE))
+
+# Load the image for the mole dot
+mole_image = pygame.image.load("mole.png")
+mole_image = pygame.transform.scale(mole_image, (DOT_SIZE, DOT_SIZE))
+
+# Load the image for the bad mole dot that deducts points
+bad_mole_image = pygame.image.load("mole3.png")
+bad_mole_image = pygame.transform.scale(bad_mole_image, (DOT_SIZE, DOT_SIZE))
+
+# Create a font for the score and timer display
+font = pygame.font.Font(None, 36)
+
+# Set the initial spawn rate and counter
+spawn_rate = 0.01  # Adjust this value to change the spawn rate (higher values mean more frequent spawns)
+spawn_counter = 0
+
+# Store the dots and their states (0 for normal, 1 for hit, 2 for mole that increases points, 3 for bad mole that deducts points)
+dots = [{'position': (100, 100), 'state': 0, 'start_time': time.time()}]
+
+# Function to check if a new dot is too close to existing dots
+def is_too_close(new_dot, existing_dots):
+    for dot in existing_dots:
+        x1, y1 = new_dot['position']
+        x2, y2 = dot['position']
+        distance = ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
+        if distance < MIN_DISTANCE:
+            return True
+    return False
+
+# Start the game timer
+start_time = time.time()
+
+# Main game loop
+clock = pygame.time.Clock()
+
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            mouse_x, mouse_y = event.pos
+            for dot in dots:
+                dot_x, dot_y = dot['position']
+                distance = ((dot_x - mouse_x) ** 2 + (dot_y - mouse_y) ** 2) ** 0.5
+                if distance <= DOT_SIZE / 2:
+                    if dot['state'] == 2:  # Existing mole that increases points
+                        dot['state'] = 1
+                        dot['start_time'] = time.time()
+                        score += 1
+                    elif dot['state'] == 3:  # New mole that deducts points
+                        dot['state'] = 1
+                        dot['start_time'] = time.time()
+                        score = max(0, score - 1)
+
+    screen.fill(BACKGROUND_COLOR)
+
+    for dot in list(dots):
+        dot_x, dot_y = dot['position']
+        if dot['state'] == 0:
+            if time.time() - dot['start_time'] >= 2:
+                dot['state'] = 2
+                dot['start_time'] = time.time()
+            else:
+                screen.blit(dot_image, (dot_x - DOT_SIZE / 2, dot_y - DOT_SIZE / 2))
+        elif dot['state'] == 1:
+            if time.time() - dot['start_time'] >= 1:
+                dots.remove(dot)
+            else:
+                screen.blit(hit_image, (dot_x - DOT_SIZE / 2, dot_y - DOT_SIZE / 2))
+        elif dot['state'] == 2:
+            if time.time() - dot['start_time'] >= 3:
+                dots.remove(dot)
+            else:
+                screen.blit(mole_image, (dot_x - DOT_SIZE / 2, dot_y - DOT_SIZE / 2))
+        elif dot['state'] == 3:
+            if time.time() - dot['start_time'] >= 3:
+                dots.remove(dot)
+            else:
+                screen.blit(bad_mole_image, (dot_x - DOT_SIZE / 2, dot_y - DOT_SIZE / 2))
+
+        # Adjust the spawn rate here
+        if spawn_counter >= 1 / spawn_rate:
+            if len(dots) < 5:
+                # Existing mole
+                new_dot = {'position': (random.randint(DOT_SIZE, WIDTH - DOT_SIZE), random.randint(DOT_SIZE, HEIGHT - DOT_SIZE)), 'state': 0, 'start_time': time.time()}
+                while is_too_close(new_dot, dots):
+                    new_dot = {'position': (random.randint(DOT_SIZE, WIDTH - DOT_SIZE), random.randint(DOT_SIZE, HEIGHT - DOT_SIZE)), 'state': 0, 'start_time': time.time()}
+                dots.append(new_dot)
+                # New mole that deducts points
+                new_dot = {'position': (random.randint(DOT_SIZE, WIDTH - DOT_SIZE), random.randint(DOT_SIZE, HEIGHT - DOT_SIZE)), 'state': 3, 'start_time': time.time()}
+                while is_too_close(new_dot, dots):
+                    new_dot = {'position': (random.randint(DOT_SIZE, WIDTH - DOT_SIZE), random.randint(DOT_SIZE, HEIGHT - DOT_SIZE)), 'state': 3, 'start_time': time.time()}
+                dots.append(new_dot)
+            spawn_counter = 0
+        else:
+            spawn_counter += 1
+
+    # Display the score at the top left corner
+    score_text = font.render(f"Score: {score}", True, (0, 0, 0))
+    screen.blit(score_text, (10, 10))
+
+    # Calculate the remaining time
+    remaining_time = max(0, GAME_DURATION - (time.time() - start_time))
+    timer_text = font.render(f"Time: {int(remaining_time)}", True, (0, 0, 0))
+    screen.blit(timer_text, (WIDTH - 100, 10))
+
+    # End the game when the timer runs out
+    if remaining_time == 0:
+        running = False
+
+    pygame.display.update()
+
+    clock.tick(FPS)
+
+# Game over screen
+game_over_text = font.render(f"Game Over! Your Score: {score}", True, (0, 0, 0))
+game_over_rect = game_over_text.get_rect(center=(WIDTH / 2, HEIGHT / 2))
+
+screen.fill(BACKGROUND_COLOR)
+screen.blit(game_over_text, game_over_rect)
 
 
-"""
+# Display "Thank you for playing" text
+thank_you_text = font.render("PAKYU YOURE GAY", True, (0, 0, 0))
+thank_you_rect = thank_you_text.get_rect(center=(WIDTH / 2, HEIGHT / 2 + 50))
+screen.blit(thank_you_text, thank_you_rect)
 
-BIG NOTE!!! PRESS Q TO END GAME KISA DAAN KUN TERMINATE PROGRAM GA RUN MANGOD ANG GAME!!!
-NO IDEA WHY!?
+pygame.display.update()
 
-"""
+# Wait for a moment before exiting
+pygame.time.delay(3000)
 
-
-# Global variable
-whacks = 0
-game_timer = 15
-time_left = game_timer
-
-# Constant variables
-HOLE_AMT = 4  # total holes is the square of this number
-HOLE_PADDING = 10
-BG_COLOR = "burlywood4"
-LIGHT_COLOR = "#faead6"
-DARK_COLOR = "#0c1703"
-OTHER_COLOR = "#eff3a0"
-
-
-# Start or reset the game
-def start():
-    global whacks, time_left
-    for i in range(len(hole)):
-        hole[i].config(state="disabled")
-    time_left = game_timer
-    whacks = 0
-    scorelabel.config(text="0")
-    timelabel.config(text=time_left)
-    remark.config(text="")
-
-    t = threading.Thread(target=whac_a_mole)
-    t.start()
-
-
-# Countdown timer
-def time():
-    global time_left
-    while time_left > 0:
-        time_left -= 1
-        sleep(1)
-        timelabel.config(text=time_left)
-        if time_left == 0:
-            handle_game_end()
-
-
-# Create replay button
-def handle_game_end():
-    global replaybtn
-    replaybtn = Button(
-        text=("Play Again"),
-        font=("Stencil", 25),
-        command=start,
-        bg=BG_COLOR,
-        fg=LIGHT_COLOR,
-    )
-    replaybtn.place(x=0, y=0)
-
-
-# Ready the player
-def ready_set_whack():
-    sleep(1)
-    scorelabel.config(text="Ready")
-    engine.say("Ready")
-    engine.runAndWait()
-
-    scorelabel.config(text="Set")
-    engine.say("Set")
-    engine.runAndWait()
-
-    scorelabel.config(text="WHACK!!")
-    engine.say("WHACK!!")
-    engine.runAndWait()
-    scorelabel.config(text="0")
-
-
-def change_state(hole_num):
-    global whacks
-    hole[hole_num].config(image=holepng)
-    sleep(1)
-
-    # Randomly select a mole or penalty mole (70% chance for regular mole, 30% chance for penalty mole)
-    mole_or_penalty = mole if random.random() < 0.7 else penalty_mole
-
-    if mole_or_penalty == mole:
-        hole[hole_num].config(state="normal", image=mole)
-        sleep(1)
-        hole[hole_num].config(
-            state="disabled", image=blank, command=partial(onwhack, hole_num)
-        )
-    else:  # This is the penalty mole
-        hole[hole_num].config(state="normal", image=penalty_mole)
-        sleep(1)
-        hole[hole_num].config(
-            state="disabled", image=blank, command=partial(onwhack_penalty, hole_num)
-        )
-
-# Game!
-def whac_a_mole():
-    handle_game_end()
-   # ready_set_whack()
-
-    timer_thread = threading.Thread(target=time)
-    timer_thread.start()
-
-    # Stop generating moles when the timer ends
-    last_number = None
-    while time_left:
-        hole_num = random.randint(0, HOLE_AMT**2 - 1)
-        if hole_num == last_number:
-            continue
-        last_number = hole_num
-        change_hole = threading.Thread(target=change_state, args=(hole_num,))
-        change_hole.start()
-        sleep(0.8)
-
-        # print(hole_num)
-        # change_state(hole_num)
-    change_hole.join()
-
-    handle_game_end()
-    # replaybtn.config(state='normal')
-
-    # Give remark
-    global whacks
-    rating = {
-        0: "POORLY",
-        10: "BADLY",
-        20: "DO BETTER!",
-        30: "GOOD",
-        40: "GREAT!",
-        50: "AWESOME!",
-        60: "WHACKED 'em ALL!",
-    }
-    for minscore, rm in rating.items():
-        if whacks >= minscore and whacks < minscore + 10:
-            remark.config(text=f"You did\n{rm}", fg=LIGHT_COLOR)
-            engine.say(f"You did {rm}")
-            engine.runAndWait()
-            break
-
-
-# When the mole is hit
-def onwhack(num):
-    hole[num].config(command=0, relief="sunken", image=hitpng)
-    global whacks
-    whacks += 1
-    scorelabel.config(text="* " + str(whacks) + " *")
-
-def onwhack_penalty(num):
-    hole[num].config(command=0, relief="sunken", image=hitpng)
-    global whacks
-    whacks -= 1
-    scorelabel.config(text="* " + str(whacks) + " *")
-
-
-# Text to speech engine
-engine = pyttsx3.init()
-engine.setProperty("rate", 130)
-engine.setProperty("volume", 1)
-
-
-# Create window
-screen = Tk()
-screen.title("Shoot'eM ole")
-screen.attributes("-fullscreen", True)
-screen.config(bg=BG_COLOR)
-
-
-# Title
-title = Label(text="Shoot'eM ole", font=("Stencil", 50), bg=BG_COLOR, fg=LIGHT_COLOR)
-title.grid(column=1, row=0, pady=10)
-
-# Score
-scorelabel = Label(
-    text=whacks,
-    width=9,
-    font=("Cascadia Code", 30),
-    bg=DARK_COLOR,
-    fg=LIGHT_COLOR,
-)
-scorelabel.grid(column=1, row=1)
-
-
-timelabel = Label(
-    text=time_left, width=9, font=("Cascadia Code", 30), bg=LIGHT_COLOR, fg=DARK_COLOR
-)
-timelabel.grid(column=1, row=2)
-
-
-# Remark
-remark = Label(text="", width=17, bg=BG_COLOR, fg=BG_COLOR, font=("Stencil", 50))
-remark.place(relx=0.15, rely=0.5, anchor=CENTER)
-# remark.grid(column=1, row=3)
-
-
-# Create playarea grid
-playarea = Frame(screen, bg=BG_COLOR)
-playarea.grid(column=1, row=3)
-screen.columnconfigure(1, weight=1)
-screen.rowconfigure(2, weight=1)
-
-
-# Load all assets
-holepng = PhotoImage(file="hole.png").subsample(5)
-blank = PhotoImage(file="blank.png").subsample(5)
-mole = PhotoImage(file="mole.png").subsample(5)
-hitpng = PhotoImage(file="hit.png").subsample(5)
-penalty_mole = PhotoImage(file="mole3.png").subsample(5)  # Load the penalty mole image
-
-
-hole = []
-hole_index = 0
-for row in range(HOLE_AMT):
-    for col in range(HOLE_AMT):
-        target = Button(
-            playarea,
-            image=blank,
-            bg=BG_COLOR,
-            state="disabled",
-            activebackground=BG_COLOR,
-            border=0,
-            command=partial(onwhack, hole_index),
-        )
-        hole.append(target)
-        hole[hole_index].grid(column=col, row=row, sticky=NSEW)
-
-        playarea.columnconfigure(col, weight=1)
-        playarea.rowconfigure(row, weight=1)
-
-        hole_index += 1
-
-
-# Pad holes
-for child in playarea.winfo_children():
-    child.grid_configure(padx=HOLE_PADDING, pady=HOLE_PADDING)
-
-
-# ano ni?
-# loc_y = random.randint(200, 1300)
-# loc_x = random.randint(200, 1300)
-
-
-# Press q to end game
-def on_key(event):
-    if event.char == "q":
-        screen.destroy()
-        sys.exit()
-
-
-screen.bind("<Key>", on_key)
-
-
-start()
-screen.mainloop()
+# Quit Pygame
+pygame.quit()
+sys.exit()
