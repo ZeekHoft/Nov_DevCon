@@ -17,7 +17,7 @@ NO IDEA WHY!?
 
 # Global variable
 whacks = 0
-game_timer = 10
+game_timer = 15
 time_left = game_timer
 
 # Constant variables
@@ -85,6 +85,16 @@ def ready_set_whack():
     scorelabel.config(text="0")
 
 
+def change_state(hole_num):
+    hole[hole_num].config(image=holepng)
+    sleep(1)
+    hole[hole_num].config(state="normal", image=mole)
+    sleep(1)
+    hole[hole_num].config(
+        state="disabled", image=blank, command=partial(onwhack, hole_num)
+    )
+
+
 # Game!
 def whac_a_mole():
     handle_game_end()
@@ -93,17 +103,21 @@ def whac_a_mole():
     timer_thread = threading.Thread(target=time)
     timer_thread.start()
 
-    mole = PhotoImage(file="mole.png")
-    mole = mole.subsample(5)
-
     # Stop generating moles when the timer ends
+    last_number = None
     while time_left:
         hole_num = random.randint(0, HOLE_AMT**2 - 1)
-        hole[hole_num].config(state="normal", image=mole)
+        if hole_num == last_number:
+            continue
+        last_number = hole_num
+        change_hole = threading.Thread(target=change_state, args=(hole_num,))
+        change_hole.start()
         sleep(0.8)
-        hole[hole_num].config(
-            state="disabled", image=holepng, command=partial(onwhack, hole_num)
-        )
+
+        # print(hole_num)
+        # change_state(hole_num)
+    change_hole.join()
+
     handle_game_end()
     # replaybtn.config(state='normal')
 
@@ -181,16 +195,20 @@ screen.columnconfigure(1, weight=1)
 screen.rowconfigure(2, weight=1)
 
 
-# Digging holes
+# Load all assets
+holepng = PhotoImage(file="hole.png").subsample(5)
+blank = PhotoImage(file="blank.png").subsample(5)
+mole = PhotoImage(file="mole.png").subsample(5)
+hitpng = PhotoImage(file="hit.png").subsample(5)
+
+
 hole = []
 hole_index = 0
-holepng = PhotoImage(file="hole.png")
-holepng = holepng.subsample(5)
 for row in range(HOLE_AMT):
     for col in range(HOLE_AMT):
         target = Button(
             playarea,
-            image=holepng,
+            image=blank,
             bg=BG_COLOR,
             state="disabled",
             activebackground=BG_COLOR,
@@ -205,9 +223,6 @@ for row in range(HOLE_AMT):
 
         hole_index += 1
 
-# Hit/whack effect
-hitpng = PhotoImage(file="hit.png")
-hitpng = hitpng.subsample(5)
 
 # Pad holes
 for child in playarea.winfo_children():
