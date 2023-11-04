@@ -7,17 +7,9 @@ import sys
 import pyttsx3
 
 
-"""
-
-BIG NOTE!!! PRESS Q TO END GAME KISA DAAN KUN TERMINATE PROGRAM GA RUN MANGOD ANG GAME!!!
-NO IDEA WHY!?
-
-"""
-
-
 # Global variable
 whacks = 0
-game_timer = 15
+game_timer = 20
 time_left = game_timer
 
 # Constant variables
@@ -114,19 +106,15 @@ def whac_a_mole():
         change_hole.start()
         sleep(0.8)
 
-        # print(hole_num)
-        # change_state(hole_num)
     change_hole.join()
-
     handle_game_end()
-    # replaybtn.config(state='normal')
 
     # Give remark
     global whacks
     rating = {
         0: "POORLY",
         10: "BADLY",
-        20: "DO BETTER!",
+        20: "WELL!",
         30: "GOOD",
         40: "GREAT!",
         50: "AWESOME!",
@@ -164,6 +152,7 @@ screen.config(bg=BG_COLOR)
 # Title
 title = Label(text="Shoot'eM ole", font=("Stencil", 50), bg=BG_COLOR, fg=LIGHT_COLOR)
 title.grid(column=1, row=0, pady=10)
+screen.rowconfigure(0, weight=1)
 
 # Score
 scorelabel = Label(
@@ -174,13 +163,13 @@ scorelabel = Label(
     fg=LIGHT_COLOR,
 )
 scorelabel.grid(column=1, row=1)
-
+screen.rowconfigure(1, weight=1)
 
 timelabel = Label(
     text=time_left, width=9, font=("Cascadia Code", 30), bg=LIGHT_COLOR, fg=DARK_COLOR
 )
 timelabel.grid(column=1, row=2)
-
+screen.rowconfigure(2, weight=1)
 
 # Remark
 remark = Label(text="", width=17, bg=BG_COLOR, fg=BG_COLOR, font=("Stencil", 50))
@@ -192,7 +181,7 @@ remark.place(relx=0.15, rely=0.5, anchor=CENTER)
 playarea = Frame(screen, bg=BG_COLOR)
 playarea.grid(column=1, row=3)
 screen.columnconfigure(1, weight=1)
-screen.rowconfigure(2, weight=1)
+screen.rowconfigure(3, weight=7)
 
 
 # Load all assets
@@ -227,11 +216,6 @@ for row in range(HOLE_AMT):
 # Pad holes
 for child in playarea.winfo_children():
     child.grid_configure(padx=HOLE_PADDING, pady=HOLE_PADDING)
-
-
-# ano ni?
-# loc_y = random.randint(200, 1300)
-# loc_x = random.randint(200, 1300)
 
 
 # Press q to end game
