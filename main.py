@@ -5,6 +5,7 @@ import threading
 import random
 import sys
 import pyttsx3
+from PIL import Image, ImageTk
 
 
 # Global variable
@@ -85,8 +86,9 @@ def new_entity(index):
         targets[index].config(
             image=human, state="active", command=partial(onwhack, index, False)
         )
+        sleep(1)
 
-    sleep(2)
+    sleep(1)
     targets[index].config(state="disabled", image=blank, command=0)
 
 
@@ -145,8 +147,14 @@ engine.setProperty("volume", 1)
 screen = Tk()
 screen.title("Shoot'eM ole")
 screen.attributes("-fullscreen", True)
-screen.config(bg=BG_COLOR)
+screen.config(bg=GREY_COLOR)
 
+# Background Image
+bg = Image.open("./assets/background.png")
+width, height = screen.winfo_screenwidth(), screen.winfo_screenheight()
+bg = ImageTk.PhotoImage(bg.resize((width, height)))
+bglbl = Label(screen, image=bg)
+bglbl.place(x=0, y=0)
 
 # Title
 title = Label(
@@ -176,7 +184,7 @@ screen.rowconfigure(2, weight=1)
 
 
 # Create playarea grid
-playarea = Frame(screen, bg=GREY_COLOR)
+playarea = Frame(screen, bg="black")
 playarea.grid(column=1, row=3)
 screen.columnconfigure(1, weight=1)
 screen.rowconfigure(3, weight=7)
@@ -199,8 +207,8 @@ for row in range(GRID_AMT):
         target = Button(
             playarea,
             image=blank,
-            bg=GREY_COLOR,
-            activebackground=GREY_COLOR,
+            bg="black",
+            activebackground="black",
             border=0,
             command=0,
         )
