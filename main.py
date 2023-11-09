@@ -37,7 +37,7 @@ def start(event):
     time_left = game_timer
     points = 0
     timelabel.config(text=f"{time_left} seconds")
-    remark.config(text="")
+    remark.grid_forget()
 
     t = threading.Thread(target=gameproper)
     t.start()
@@ -115,6 +115,7 @@ def gameproper():
     for minscore, rm in rating.items():
         if points >= minscore and points < minscore + 10:
             remark.config(text=f"You did\n{rm}", fg=DARK_COLOR)
+            remark.grid(column=1, row=3)
             engine.say(f"You did {rm}")
             engine.runAndWait()
             break
@@ -122,7 +123,7 @@ def gameproper():
     timelabel.configure(text="Play Again")
 
 
-# When the aswang is hit
+# When the aswang/person is hit
 def onwhack(index, if_aswang):
     global points
     if if_aswang:
@@ -165,17 +166,13 @@ scorelabel = Label(
 scorelabel.grid(column=1, row=1)
 screen.rowconfigure(1, weight=1)
 
+# Timer
 timelabel = Label(
     text="Start", width=11, font=("Cascadia Code", 30), bg=BG_COLOR, fg=DARK_COLOR
 )
 timelabel.bind(sequence="<Button-1>", func=start)
 timelabel.grid(column=1, row=2)
 screen.rowconfigure(2, weight=1)
-
-# Remark
-remark = Label(text="", width=17, bg=BG_COLOR, fg=BG_COLOR, font=("Stencil", 50))
-remark.place(relx=0.15, rely=0.5, anchor=CENTER)
-# remark.grid(column=1, row=3)
 
 
 # Create playarea grid
@@ -184,6 +181,8 @@ playarea.grid(column=1, row=3)
 screen.columnconfigure(1, weight=1)
 screen.rowconfigure(3, weight=7)
 
+# Remark
+remark = Label(text="", bg=GREY_COLOR, fg=DARK_COLOR, font=("Stencil", 50))
 
 # Load all assets
 blank = PhotoImage(file="./assets/blank.png").subsample(5)
