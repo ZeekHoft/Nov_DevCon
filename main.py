@@ -184,11 +184,13 @@ screen.rowconfigure(2, weight=1)
 
 
 # Create playarea grid
-playarea = Frame(screen, bg="black")
+image_path = "./assets/background.png"
+transparent_image = PhotoImage(file=image_path)
+playarea = Label(screen, image=transparent_image)
 playarea.grid(column=1, row=3)
+playarea.image = transparent_image
 screen.columnconfigure(1, weight=1)
 screen.rowconfigure(3, weight=7)
-
 # Remark
 remark = Label(text="", bg=GREY_COLOR, fg=DARK_COLOR, font=("Stencil", 50))
 
