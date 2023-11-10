@@ -6,6 +6,7 @@ import random
 import sys
 import pyttsx3
 from PIL import Image, ImageTk
+import inputjoycon
 
 
 # Global variable
@@ -147,13 +148,13 @@ engine.setProperty("volume", 1)
 screen = Tk()
 screen.title("Shoot'eM ole")
 screen.attributes("-fullscreen", True)
-screen.config(bg=GREY_COLOR)
+screen.config(bg=GREY_COLOR, cursor="@./assets/cursor.cur")
 
 # Background Image
 bg = Image.open("./assets/background.png")
 width, height = screen.winfo_screenwidth(), screen.winfo_screenheight()
 bg = ImageTk.PhotoImage(bg.resize((width, height)))
-bglbl = Label(screen, image=bg)
+bglbl = Label(screen, image=bg, bg="black")
 bglbl.place(x=0, y=0)
 
 # Title
@@ -228,11 +229,16 @@ for child in playarea.winfo_children():
     child.grid_configure(padx=GRID_PAD, pady=GRID_PAD)
 
 
-# Press q to end game
+# Press q to end game, j to activate joycon
 def on_key(event):
     if event.char == "q":
         screen.destroy()
         sys.exit()
+    if event.char == "j":
+        try:
+            inputjoycon.activate_joycon()
+        except:
+            print("Connect joycon via Bluetooth first!")
 
 
 screen.bind("<Key>", on_key)
