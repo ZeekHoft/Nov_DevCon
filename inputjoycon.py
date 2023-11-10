@@ -1,29 +1,30 @@
 from pyjoycon import get_R_id, GyroTrackingJoyCon, ButtonEventJoyCon
 import pyautogui
-import ctypes #For get resolution of the screen
+import ctypes  # For get resolution of the screen
 import math
+
 
 class MyJoyCon(GyroTrackingJoyCon, ButtonEventJoyCon):
     pass
 
-joycon_id = get_R_id()
-joycon = MyJoyCon(*joycon_id)
 
-print(joycon.get_status())
-
-
-def test_joycon():
+def activate_joycon():
+    joycon_id = get_R_id()
+    joycon = MyJoyCon(*joycon_id)
 
     # joycon pointer coordinates
     joyconcoords = [joycon.pointer[0] * 100, joycon.pointer[1] * 100]
 
-    #x and y cordinates are divided by two to fall in the center of the screen (for any monitor)
-    center_res = ctypes.windll.user32.GetSystemMetrics(0)/2, ctypes.windll.user32.GetSystemMetrics(1)/2
+    # x and y cordinates are divided by two to fall in the center of the screen (for any monitor)
+    center_res = (
+        ctypes.windll.user32.GetSystemMetrics(0) / 2,
+        ctypes.windll.user32.GetSystemMetrics(1) / 2,
+    )
 
     # Convert normalized coordinates to screen coordinates
     screen_width, screen_height = pyautogui.size()
     print(screen_width)
-    
+
     # Calculate the center of the screen
     center_x = screen_width // 2
     center_y = screen_height // 2
@@ -35,8 +36,10 @@ def test_joycon():
 
     # Define the sensitivity for cursor movement
     max_sensitivity = 20  # Maximum sensitivity
-    min_sensitivity = 5   # Minimum sensitivity
-    max_distance = math.sqrt(center_x**2 + center_y**2)  # Maximum distance from the center
+    min_sensitivity = 5  # Minimum sensitivity
+    max_distance = math.sqrt(
+        center_x**2 + center_y**2
+    )  # Maximum distance from the center
 
     # Define the weight for smoothing (between 0 and 1)
     smoothing_weight = 0.8  # Adjust as needed
@@ -54,13 +57,18 @@ def test_joycon():
         joyconcoords = [joycon.pointer[0] * 100, joycon.pointer[1] * 100]
 
         # Calculate the displacement from the center
-        distance_from_center = math.sqrt((joyconcoords[0]*center_x)**2 + (joyconcoords[1]*center_y)**2)
+        distance_from_center = math.sqrt(
+            (joyconcoords[0] * center_x) ** 2 + (joyconcoords[1] * center_y) ** 2
+        )
 
         # Apply a dead zone to the gyroscope data
         if distance_from_center < dead_zone_size:
             joyconcoords = [0, 0]
 
-        sensitivity = min(max_sensitivity, max(min_sensitivity, distance_from_center / max_distance * max_sensitivity))
+        sensitivity = min(
+            max_sensitivity,
+            max(min_sensitivity, distance_from_center / max_distance * max_sensitivity),
+        )
 
         # Calculate cursor displacement based on gyroscope data
         displacement_x = joyconcoords[0] * sensitivity
@@ -88,13 +96,15 @@ def test_joycon():
 
         for event_type, status in joycon.events():
             if event_type == "zr" and status == True:
-
                 # printing joyconcoords
+                """
                 print("\njoyconcoords:")
                 print(f"x: {joyconcoords[0]}")
                 print(f"x: {joyconcoords[1]}")
                 print(f"bang lol")
+                """
                 pyautogui.click()
 
-
-test_joycon()   
+            # Press x to calibrate/reset
+            if event_type == "x" and status == True:
+                activate_joycon()
