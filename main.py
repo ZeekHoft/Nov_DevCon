@@ -4,10 +4,11 @@ from time import *
 import threading
 import random
 import sys
-import pyttsx3
 from PIL import Image, ImageTk
+import pyglet
 import inputjoycon
 
+pyglet.options["win32_gdi_font"] = True
 
 # Global variable
 points = 0
@@ -15,20 +16,18 @@ game_timer = 30
 time_left = game_timer
 rating = {
     0: "POORLY",
-    10: "BADLY",
-    20: "WELL!",
-    30: "GOOD",
-    40: "GREAT!",
-    50: "AWESOME!",
-    60: "WHACKED 'em ALL!",
+    5: "BADLY",
+    10: "WELL!",
+    15: "GOOD!",
+    20: "GREAT!",
+    25: "AWESOME!",
 }
 
 # Constant variables
 GRID_AMT = 4  # total boxes is the square of this number
 GRID_PAD = 10
-LIGHT_COLOR = "#dae1fc"
-DARK_COLOR = "#2f3237"
-GREY_COLOR = "#d6d8db"
+LIGHT_COLOR = "#e0d6ff"
+DARK_COLOR = "#2f373a"
 PURPLE = "#0f0a21"
 
 
@@ -59,16 +58,13 @@ def time():
 def ready_set_whack():
     sleep(1)
     scorelabel.config(text="Ready")
-    engine.say("Ready")
-    engine.runAndWait()
+    sleep(1)
 
     scorelabel.config(text="Set")
-    engine.say("Set")
-    engine.runAndWait()
+    sleep(1)
 
     scorelabel.config(text="START!")
-    engine.say("START!!!")
-    engine.runAndWait()
+    sleep(1)
     scorelabel.config(text="0 points")
 
 
@@ -122,13 +118,11 @@ def gameproper():
     # Give remark
     global points
     for minscore, rm in rating.items():
-        if points >= minscore and points < minscore + 10:
+        if points >= minscore and points < minscore + 5:
             remark.config(text=f"You did\n{rm}")
             remark.grid(column=1, row=3)
-            engine.say(f"You did {rm}")
-            engine.runAndWait()
+            sleep(2)
             break
-
     timelabel.configure(text="Play Again")
 
 
@@ -144,17 +138,11 @@ def onwhack(index, if_aswang):
     scorelabel.config(text=f"{points} points")
 
 
-# Text to speech engine
-engine = pyttsx3.init()
-engine.setProperty("rate", 130)
-engine.setProperty("volume", 1)
-
-
 # Create window
 screen = Tk()
 screen.title("Aswang Busters")
 screen.attributes("-fullscreen", True)
-screen.config(bg=GREY_COLOR, cursor="@./assets/cursor.cur")
+screen.config(cursor="@./assets/cursor.cur")
 
 # Background Image
 bg = Image.open("./assets/background.png")
@@ -163,9 +151,11 @@ bg = ImageTk.PhotoImage(bg.resize((width, height)))
 bglbl = Label(screen, image=bg, bg="black")
 bglbl.place(x=0, y=0)
 
+pyglet.font.add_file("./assets/PixelDigivolve.ttf")
+
 # Title
 title = Label(
-    text="ASWANG BUSTERS", font=("Cascadia Code", 50), bg="#080513", fg=LIGHT_COLOR
+    text="ASWANG BUSTERS", font=("Pixel Digivolve", 50), bg="#080513", fg=LIGHT_COLOR
 )
 title.grid(column=1, row=0, pady=10)
 screen.rowconfigure(0, weight=1)
@@ -174,7 +164,7 @@ screen.rowconfigure(0, weight=1)
 scorelabel = Label(
     text=points,
     width=11,
-    font=("Cascadia Code", 30),
+    font=("Pixel Digivolve", 30),
     bg=DARK_COLOR,
     fg=LIGHT_COLOR,
 )
@@ -183,7 +173,7 @@ screen.rowconfigure(1, weight=1)
 
 # Timer
 timelabel = Label(
-    text="Start", width=11, font=("Cascadia Code", 30), bg=LIGHT_COLOR, fg=DARK_COLOR
+    text="Start", width=11, font=("Pixel Digivolve", 30), bg=LIGHT_COLOR, fg=DARK_COLOR
 )
 timelabel.bind(sequence="<Button-1>", func=start)
 timelabel.grid(column=1, row=2)
@@ -199,7 +189,7 @@ playarea.image = transparent_image
 screen.columnconfigure(1, weight=1)
 screen.rowconfigure(3, weight=7)
 # Remark
-remark = Label(text="", bg=PURPLE, fg=LIGHT_COLOR, font=("Stencil", 50))
+remark = Label(text="", bg=PURPLE, fg=LIGHT_COLOR, font=("Pixel Digivolve", 50))
 
 # Load all assets
 blank = PhotoImage(file="./assets/blank.png").subsample(5)
