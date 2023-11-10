@@ -11,7 +11,7 @@ import inputjoycon
 
 # Global variable
 points = 0
-game_timer = 20
+game_timer = 30
 time_left = game_timer
 rating = {
     0: "POORLY",
@@ -26,16 +26,17 @@ rating = {
 # Constant variables
 GRID_AMT = 4  # total boxes is the square of this number
 GRID_PAD = 10
-BG_COLOR = "#f4f5f6"
+LIGHT_COLOR = "#dae1fc"
 DARK_COLOR = "#2f3237"
 GREY_COLOR = "#d6d8db"
+PURPLE = "#0f0a21"
 
 
 # Start or restart the game
 def start(event):
     global points, time_left
-    # for i in range(len(targets)):
-    #     targets[i].config(state="disabled")
+    for i in range(len(targets)):
+        targets[i].config(state="disabled", image=blank, command=0)
     time_left = game_timer
     points = 0
     timelabel.config(text=f"{time_left} seconds")
@@ -65,31 +66,36 @@ def ready_set_whack():
     engine.say("Set")
     engine.runAndWait()
 
-    scorelabel.config(text="WHACK!!")
-    engine.say("WHACK!!")
+    scorelabel.config(text="START!")
+    engine.say("START!!!")
     engine.runAndWait()
     scorelabel.config(text="0 points")
 
 
 # Spawn a new entity in the target location
 def new_entity(index):
+    global points
     # Aswang
     if random.getrandbits(1):
         targets[index].config(
             image=human, state="active", command=partial(onwhack, index, True)
         )
-        sleep(1)
+        sleep(0.8)
         if not targets[index]["command"] == 0:
             targets[index].config(image=aswang)
+        sleep(0.8)
 
     # Human
     else:
         targets[index].config(
             image=human, state="active", command=partial(onwhack, index, False)
         )
-        sleep(1)
+        sleep(1.6)
+        # Add point if not hit
+        if not targets[index]["command"] == 0:
+            points += 1
+            scorelabel.config(text=f"{points} points")
 
-    sleep(1)
     targets[index].config(state="disabled", image=blank, command=0)
 
 
@@ -109,7 +115,7 @@ def gameproper():
         num_order.append(index)
         spawn_entity = threading.Thread(target=new_entity, args=(index,))
         spawn_entity.start()
-        sleep(1.3)
+        sleep(1)
 
     spawn_entity.join()
 
@@ -117,7 +123,7 @@ def gameproper():
     global points
     for minscore, rm in rating.items():
         if points >= minscore and points < minscore + 10:
-            remark.config(text=f"You did\n{rm}", fg=DARK_COLOR)
+            remark.config(text=f"You did\n{rm}")
             remark.grid(column=1, row=3)
             engine.say(f"You did {rm}")
             engine.runAndWait()
@@ -146,7 +152,7 @@ engine.setProperty("volume", 1)
 
 # Create window
 screen = Tk()
-screen.title("Shoot'eM ole")
+screen.title("Aswang Busters")
 screen.attributes("-fullscreen", True)
 screen.config(bg=GREY_COLOR, cursor="@./assets/cursor.cur")
 
@@ -159,7 +165,7 @@ bglbl.place(x=0, y=0)
 
 # Title
 title = Label(
-    text="Aswang Game (tentative)", font=("Chiller", 50), bg=BG_COLOR, fg=DARK_COLOR
+    text="ASWANG BUSTERS", font=("Cascadia Code", 50), bg="#080513", fg=LIGHT_COLOR
 )
 title.grid(column=1, row=0, pady=10)
 screen.rowconfigure(0, weight=1)
@@ -170,14 +176,14 @@ scorelabel = Label(
     width=11,
     font=("Cascadia Code", 30),
     bg=DARK_COLOR,
-    fg=BG_COLOR,
+    fg=LIGHT_COLOR,
 )
 scorelabel.grid(column=1, row=1)
 screen.rowconfigure(1, weight=1)
 
 # Timer
 timelabel = Label(
-    text="Start", width=11, font=("Cascadia Code", 30), bg=BG_COLOR, fg=DARK_COLOR
+    text="Start", width=11, font=("Cascadia Code", 30), bg=LIGHT_COLOR, fg=DARK_COLOR
 )
 timelabel.bind(sequence="<Button-1>", func=start)
 timelabel.grid(column=1, row=2)
@@ -193,7 +199,7 @@ playarea.image = transparent_image
 screen.columnconfigure(1, weight=1)
 screen.rowconfigure(3, weight=7)
 # Remark
-remark = Label(text="", bg=GREY_COLOR, fg=DARK_COLOR, font=("Stencil", 50))
+remark = Label(text="", bg=PURPLE, fg=LIGHT_COLOR, font=("Stencil", 50))
 
 # Load all assets
 blank = PhotoImage(file="./assets/blank.png").subsample(5)
@@ -210,8 +216,8 @@ for row in range(GRID_AMT):
         target = Button(
             playarea,
             image=blank,
-            bg="black",
-            activebackground="black",
+            bg=PURPLE,
+            activebackground=PURPLE,
             border=0,
             command=0,
         )
