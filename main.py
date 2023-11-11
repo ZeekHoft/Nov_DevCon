@@ -33,6 +33,7 @@ rating = {
     15: "GOOD!",
     20: "GREAT!",
     25: "AWESOME!",
+    30: "PERFECT!",
 }
 jc = None
 
@@ -116,20 +117,25 @@ def gameproper():
     timer_thread.start()
 
     # Stop generating aswangs when the timer ends
+    global points
     num_order = []
+    highest = 0
     while time_left:
+        if points > highest:
+            highest = points
+        if points in list(rating.keys())[2::2] and points == highest:
+            mixer.Sound.play(levelup)
         index = random.randint(0, GRID_AMT**2 - 1)
         if index in num_order[-3:]:
             continue
         num_order.append(index)
         spawn_entity = threading.Thread(target=new_entity, args=(index,))
         spawn_entity.start()
-        sleep(1)
+        sleep(0.98)
 
     spawn_entity.join()
 
     # Give remark
-    global points
     for minscore, rm in rating.items():
         if points >= minscore and points < minscore + 5:
             remark.config(text=f"You did\n{rm}")
@@ -145,9 +151,11 @@ def onwhack(index, if_aswang):
     if if_aswang:
         targets[index].config(command=0, relief="sunken", image=aswanghit)
         points += 1
+        mixer.Sound.play(random.choice((ad1, ad2, ad3)))
     else:
         targets[index].config(command=0, relief="sunken", image=humanhit)
         points -= 1
+        mixer.Sound.play(minus)
     scorelabel.config(text=f"{points} points")
 
 
@@ -155,7 +163,7 @@ def onwhack(index, if_aswang):
 screen = Tk()
 screen.title("Aswang Busters")
 screen.attributes("-fullscreen", True)
-# screen.config(cursor="@cursor.cur")
+screen.config(cursor="@assets/cursor.cur")
 
 # Background Image
 bg = Image.open(resource_path("assets/background.png"))
@@ -237,6 +245,7 @@ for child in playarea.winfo_children():
 
 
 # Press q to end game, j to activate joycon
+# On joycon: x to calibrate, b to stop
 def on_key(event):
     global jc
     if event.char == "j":
@@ -258,12 +267,17 @@ def on_key(event):
 
 screen.bind("<Key>", on_key)
 
+# Music and Sounds
 mixer.init()
 mixer.music.load(resource_path("sounds/Leo Tirol - Just Survive.wav"))
-mixer.music.set_volume(0.7)
+mixer.music.set_volume(0.5)
 mixer.music.play(-1)
-
-bang = mixer.Sound(resource_path("sounds/shoot fx.wav"))
+levelup = mixer.Sound(resource_path("sounds/levelup.wav"))
+bang = mixer.Sound(resource_path("sounds/shoot.wav"))
+minus = mixer.Sound(resource_path("sounds/minus.wav"))
+ad1 = mixer.Sound(resource_path("sounds/aswang death.wav"))
+ad2 = mixer.Sound(resource_path("sounds/aswang death #2.wav"))
+ad3 = mixer.Sound(resource_path("sounds/aswang death #3.wav"))
 
 
 def shoot(event):
