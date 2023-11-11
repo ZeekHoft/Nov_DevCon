@@ -106,5 +106,11 @@ def activate_joycon():
                 pyautogui.click()
 
             # Press x to calibrate/reset
-            if event_type == "x" and status == True:
-                activate_joycon()
+            elif event_type == "x" and status == True:
+                try:
+                    return
+                finally:
+                    activate_joycon()
+
+            elif event_type == "b" and status == True:
+                return
