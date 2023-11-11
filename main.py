@@ -1,6 +1,6 @@
 from functools import partial
 from tkinter import *
-from time import *
+from time import sleep
 import threading
 import random
 import sys
@@ -24,17 +24,25 @@ assets_dir = resource_path("assets")
 
 # Global variable
 points = 0
-game_timer = 30
+game_timer = 40
 time_left = game_timer
 rating = {
     0: "POORLY",
     5: "BADLY",
-    10: "WELL!",
+    10: "OKAY",
     15: "GOOD!",
     20: "GREAT!",
-    25: "AWESOME!",
-    30: "PERFECT!",
+    25: "AMAZING",
+    30: "AWESOME!",
+    35: "EXCELLENT!",
 }
+difficulty = {
+    "easy": (1, 1, 2, 1.5),
+    "normal": (0.8, 0.8, 1.6, 0.98),
+    "hard": (0.6, 0.7, 1.3, 0.9),
+    "hardest": (0.4, 0.6, 1, 0.8),
+}
+currentdiff = difficulty["easy"]
 jc = None
 
 # Constant variables
@@ -84,26 +92,27 @@ def ready_set_whack():
 
 # Spawn a new entity in the target location
 def new_entity(index):
-    global points
+    global points, currentdiff
     # Aswang
     if random.getrandbits(1):
         targets[index].config(
             image=human, state="active", command=partial(onwhack, index, True)
         )
-        sleep(0.8)
+        sleep(currentdiff[0])
         if not targets[index]["command"] == 0:
             targets[index].config(image=aswang)
-        sleep(0.8)
+        sleep(currentdiff[1])
 
     # Human
     else:
         targets[index].config(
             image=human, state="active", command=partial(onwhack, index, False)
         )
-        sleep(1.6)
+        sleep(currentdiff[2])
         # Add point if not hit
         if not targets[index]["command"] == 0:
             points += 1
+            scorelabel.config(fg=LIGHT_COLOR)
             scorelabel.config(text=f"{points} points")
 
     targets[index].config(state="disabled", image=blank, command=0)
@@ -117,21 +126,30 @@ def gameproper():
     timer_thread.start()
 
     # Stop generating aswangs when the timer ends
-    global points
+    global points, currentdiff
     num_order = []
     highest = 0
+    currentdiff = difficulty["easy"]
     while time_left:
-        if points > highest:
-            highest = points
-        if points in list(rating.keys())[2::2] and points == highest:
+        if points in list(rating.keys())[2::2] and points > highest:
             mixer.Sound.play(levelup)
+            highest = points
+        if time_left <= 10 and currentdiff == difficulty["hard"]:
+            currentdiff = difficulty["hardest"]
+            bglbl.config(image=bgred)
+            for i in range(len(targets)):
+                targets[i].config(bg="#e80042", activebackground="#e80042")
+        elif time_left <= 20:
+            currentdiff = difficulty["hard"]
+        elif time_left <= 30:
+            currentdiff = difficulty["normal"]
         index = random.randint(0, GRID_AMT**2 - 1)
         if index in num_order[-3:]:
             continue
         num_order.append(index)
         spawn_entity = threading.Thread(target=new_entity, args=(index,))
         spawn_entity.start()
-        sleep(0.98)
+        sleep(currentdiff[3])
 
     spawn_entity.join()
 
@@ -140,8 +158,11 @@ def gameproper():
         if points >= minscore and points < minscore + 5:
             remark.config(text=f"You did\n{rm}")
             remark.grid(column=1, row=3)
-            sleep(1)
+            sleep(2)
             break
+    for i in range(len(targets)):
+        targets[i].config(bg=PURPLE, activebackground=PURPLE)
+    bglbl.config(image=bgtk)
     timelabel.configure(text="Play Again")
 
 
@@ -151,12 +172,24 @@ def onwhack(index, if_aswang):
     if if_aswang:
         targets[index].config(command=0, relief="sunken", image=aswanghit)
         points += 1
+        scorelabel.config(fg=LIGHT_COLOR)
         mixer.Sound.play(random.choice((ad1, ad2, ad3)))
     else:
         targets[index].config(command=0, relief="sunken", image=humanhit)
         points -= 1
         mixer.Sound.play(minus)
+        scorelabel.config(fg="red")
     scorelabel.config(text=f"{points} points")
+
+
+def redder(image):
+    image = image.convert("RGB")
+    data = image.getdata()
+    new_image = []
+    for item in data:
+        new_image.append((item[0] + 50, item[1], item[2]))
+    image.putdata(new_image)
+    return image
 
 
 # Create window
@@ -168,9 +201,11 @@ screen.config(cursor="@assets/cursor.cur")
 # Background Image
 bg = Image.open(resource_path("assets/background.png"))
 width, height = screen.winfo_screenwidth(), screen.winfo_screenheight()
-bg = ImageTk.PhotoImage(bg.resize((width, height)))
-bglbl = Label(screen, image=bg, bg="black")
+bgtk = ImageTk.PhotoImage(bg.resize((width, height)))
+bglbl = Label(screen, image=bgtk, bg="black")
 bglbl.place(x=0, y=0)
+bgred = Image.open(resource_path("assets/backgroundred.png"))
+bgred = ImageTk.PhotoImage(bgred.resize((width, height)))
 
 pyglet.font.add_file(resource_path("assets/PixelDigivolve.ttf"))
 
@@ -202,9 +237,8 @@ screen.rowconfigure(2, weight=1)
 
 
 # Create playarea grid
-playarea = Label(screen, image=bg)
+playarea = Label(screen, image=bgtk)
 playarea.grid(column=1, row=3)
-playarea.image = bg
 screen.columnconfigure(1, weight=1)
 screen.rowconfigure(3, weight=10)
 # Remark
@@ -256,6 +290,11 @@ def on_key(event):
             jc_thread.start()
         except:
             print("Connect joycon via Bluetooth first!")
+    elif event.char == " ":
+        try:
+            jc.init_joycon()
+        except:
+            print("Joycon is not activated.")
     elif event.char == "q":
         try:
             jc.stop_joycon()
