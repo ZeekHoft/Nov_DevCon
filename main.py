@@ -7,8 +7,20 @@ import sys
 from PIL import Image, ImageTk
 import pyglet
 import inputjoycon
+import os
+from pygame import mixer
 
 pyglet.options["win32_gdi_font"] = True
+
+
+def resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller"""
+    base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
+
+
+assets_dir = resource_path("assets")
+
 
 # Global variable
 points = 0
@@ -121,7 +133,7 @@ def gameproper():
         if points >= minscore and points < minscore + 5:
             remark.config(text=f"You did\n{rm}")
             remark.grid(column=1, row=3)
-            sleep(2)
+            sleep(1)
             break
     timelabel.configure(text="Play Again")
 
@@ -142,16 +154,16 @@ def onwhack(index, if_aswang):
 screen = Tk()
 screen.title("Aswang Busters")
 screen.attributes("-fullscreen", True)
-screen.config(cursor="@./assets/cursor.cur")
+# screen.config(cursor="@cursor.cur")
 
 # Background Image
-bg = Image.open("./assets/background.png")
+bg = Image.open(resource_path("assets/background.png"))
 width, height = screen.winfo_screenwidth(), screen.winfo_screenheight()
 bg = ImageTk.PhotoImage(bg.resize((width, height)))
 bglbl = Label(screen, image=bg, bg="black")
 bglbl.place(x=0, y=0)
 
-pyglet.font.add_file("./assets/PixelDigivolve.ttf")
+pyglet.font.add_file(resource_path("assets/PixelDigivolve.ttf"))
 
 # Title
 title = Label(
@@ -181,22 +193,20 @@ screen.rowconfigure(2, weight=1)
 
 
 # Create playarea grid
-image_path = "./assets/background.png"
-transparent_image = PhotoImage(file=image_path)
-playarea = Label(screen, image=transparent_image)
+playarea = Label(screen, image=bg)
 playarea.grid(column=1, row=3)
-playarea.image = transparent_image
+playarea.image = bg
 screen.columnconfigure(1, weight=1)
 screen.rowconfigure(3, weight=7)
 # Remark
 remark = Label(text="", bg=PURPLE, fg=LIGHT_COLOR, font=("Pixel Digivolve", 50))
 
 # Load all assets
-blank = PhotoImage(file="./assets/blank.png").subsample(5)
-human = PhotoImage(file="./assets/human.png").subsample(5)
-humanhit = PhotoImage(file="./assets/humanhit.png").subsample(5)
-aswang = PhotoImage(file="./assets/aswang.png").subsample(5)
-aswanghit = PhotoImage(file="./assets/aswanghit.png").subsample(5)
+blank = PhotoImage(file=resource_path("assets/blank.png")).subsample(5)
+human = PhotoImage(file=resource_path("assets/human.png")).subsample(5)
+humanhit = PhotoImage(file=resource_path("assets/humanhit.png")).subsample(5)
+aswang = PhotoImage(file=resource_path("assets/aswang.png")).subsample(5)
+aswanghit = PhotoImage(file=resource_path("assets/aswanghit.png")).subsample(5)
 
 
 targets = []
@@ -232,12 +242,26 @@ def on_key(event):
         sys.exit()
     if event.char == "j":
         try:
-            inputjoycon.activate_joycon()
+            jc_thread = threading.Thread(target=inputjoycon.activate_joycon)
+            jc_thread.start()
         except:
             print("Connect joycon via Bluetooth first!")
 
 
 screen.bind("<Key>", on_key)
 
+mixer.init()
+mixer.music.load(resource_path("sounds/Leo Tirol - Just Survive.wav"))
+mixer.music.set_volume(0.7)
+mixer.music.play(-1)
+
+bang = mixer.Sound(resource_path("sounds/shoot fx.wav"))
+
+
+def shoot(event):
+    mixer.Sound.play(bang)
+
+
+screen.bind("<Button-1>", shoot)
 
 screen.mainloop()
