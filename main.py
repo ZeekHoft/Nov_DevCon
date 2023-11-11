@@ -34,6 +34,7 @@ rating = {
     20: "GREAT!",
     25: "AWESOME!",
 }
+jc = None
 
 # Constant variables
 GRID_AMT = 4  # total boxes is the square of this number
@@ -197,7 +198,7 @@ playarea = Label(screen, image=bg)
 playarea.grid(column=1, row=3)
 playarea.image = bg
 screen.columnconfigure(1, weight=1)
-screen.rowconfigure(3, weight=7)
+screen.rowconfigure(3, weight=10)
 # Remark
 remark = Label(text="", bg=PURPLE, fg=LIGHT_COLOR, font=("Pixel Digivolve", 50))
 
@@ -237,15 +238,22 @@ for child in playarea.winfo_children():
 
 # Press q to end game, j to activate joycon
 def on_key(event):
-    if event.char == "q":
-        screen.destroy()
-        sys.exit()
+    global jc
     if event.char == "j":
         try:
-            jc_thread = threading.Thread(target=inputjoycon.activate_joycon)
+            jc = inputjoycon.Joycon()
+            jc.init_joycon()
+            jc_thread = threading.Thread(target=jc.control_cursor)
             jc_thread.start()
         except:
             print("Connect joycon via Bluetooth first!")
+    elif event.char == "q":
+        try:
+            jc.stop_joycon()
+        except:
+            pass
+        screen.destroy()
+        sys.exit()
 
 
 screen.bind("<Key>", on_key)
