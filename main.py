@@ -182,16 +182,6 @@ def onwhack(index, if_aswang):
     scorelabel.config(text=f"{points} points")
 
 
-def redder(image):
-    image = image.convert("RGB")
-    data = image.getdata()
-    new_image = []
-    for item in data:
-        new_image.append((item[0] + 50, item[1], item[2]))
-    image.putdata(new_image)
-    return image
-
-
 # Create window
 screen = Tk()
 screen.title("Aswang Busters")
