@@ -86,12 +86,14 @@ class Joycon:
                     """
                     pyautogui.click()
 
-                # Press x to calibrate/reset
-                elif event_type == "x" and status == True:
+                # Press R to calibrate/reset
+                elif event_type == "r" and status == True:
                     self.init_joycon()
 
+                """
                 elif event_type == "b" and status == True:
                     self.stop = True
+                """
 
     def stop_joycon(self):
         self.stop = True

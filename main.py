@@ -19,9 +19,6 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-assets_dir = resource_path("assets")
-
-
 # Global variable
 points = 0
 game_timer = 40
@@ -43,7 +40,7 @@ difficulty = {
     "hardest": (0.4, 0.6, 1, 0.8),
 }
 currentdiff = difficulty["easy"]
-jc = None
+jc, jc_thread, t = None, None, None
 
 # Constant variables
 GRID_AMT = 4  # total boxes is the square of this number
@@ -55,6 +52,12 @@ PURPLE = "#0f0a21"
 
 # Start or restart the game
 def start(event):
+    global t
+    try:
+        if t.is_alive():
+            return
+    except:
+        pass
     global points, time_left
     for i in range(len(targets)):
         targets[i].config(state="disabled", image=blank, command=0)
@@ -235,11 +238,12 @@ screen.rowconfigure(3, weight=10)
 remark = Label(text="", bg=PURPLE, fg=LIGHT_COLOR, font=("Pixel Digivolve", 50))
 
 # Load all assets
-blank = PhotoImage(file=resource_path("assets/blank.png")).subsample(5)
-human = PhotoImage(file=resource_path("assets/human.png")).subsample(5)
-humanhit = PhotoImage(file=resource_path("assets/humanhit.png")).subsample(5)
-aswang = PhotoImage(file=resource_path("assets/aswang.png")).subsample(5)
-aswanghit = PhotoImage(file=resource_path("assets/aswanghit.png")).subsample(5)
+ss = 4
+blank = PhotoImage(file=resource_path("assets/blank.png")).subsample(ss)
+human = PhotoImage(file=resource_path("assets/human.png")).subsample(ss)
+humanhit = PhotoImage(file=resource_path("assets/humanhit.png")).subsample(ss)
+aswang = PhotoImage(file=resource_path("assets/aswang.png")).subsample(ss)
+aswanghit = PhotoImage(file=resource_path("assets/aswanghit.png")).subsample(ss)
 
 
 targets = []
@@ -268,23 +272,32 @@ for child in playarea.winfo_children():
     child.grid_configure(padx=GRID_PAD, pady=GRID_PAD)
 
 
-# Press q to end game, j to activate joycon
-# On joycon: x to calibrate, b to stop
+# Press q to end game, space to start or calibrate joycon
+# On joycon: r to calibrate
 def on_key(event):
-    global jc
-    if event.char == "j":
-        try:
-            jc = inputjoycon.Joycon()
-            jc.init_joycon()
-            jc_thread = threading.Thread(target=jc.control_cursor)
-            jc_thread.start()
-        except:
-            print("Connect joycon via Bluetooth first!")
-    elif event.char == " ":
-        try:
-            jc.init_joycon()
-        except:
-            print("Joycon is not activated.")
+    global jc, jc_thread
+    # If space is pressed
+    if event.char == " ":
+        # If joycon does not yet exist
+        if jc == None:
+            try:
+                # Initiate and start joycon thread
+                jc = inputjoycon.Joycon()
+                jc.init_joycon()
+                jc_thread = threading.Thread(target=jc.control_cursor)
+                jc_thread.start()
+            except:
+                print("Connect joycon via Bluetooth first!")
+        else:
+            # Restart thread
+            if not jc_thread.is_alive():
+                jc_thread = None
+                jc.init_joycon()
+                jc_thread = threading.Thread(target=jc.control_cursor)
+                jc_thread.start()
+            # Calibrate
+            else:
+                jc.init_joycon()
     elif event.char == "q":
         try:
             jc.stop_joycon()
